@@ -1,62 +1,42 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
+import Base64 from 'base64-js';
 import MarkdownIt from 'markdown-it';
+import { maybeShowApiKeyBanner } from './gemini-api-banner';
+import './style.css';
 
-let API_KEY = 'AIzaSyA5pN8XuDRSsX-PfWWxuGdD91KzGsHWx3I'; // Ganti dengan API key Anda.
-let video = document.querySelector('video');
-let canvas = document.querySelector('canvas');
-let captureButton = document.getElementById('capture');
+let API_KEY = 'AIzaSyA5pN8XuDRSsX-PfWWxuGdD91KzGsHWx3I';
+
+let form = document.querySelector('form');
+let promptInput = document.querySelector('input[name="prompt"]');
 let output = document.querySelector('.output');
 
-// Inisialisasi Kamera
-async function initializeCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-  } catch (e) {
-    output.textContent = 'Gagal mengakses kamera. Mohon periksa izin.';
-    console.error(e);
-  }
-}
-
-captureButton.onclick = () => {
-  let context = canvas.getContext('2d');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  // Gambar frame dari video ke canvas
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  // Konversi ke base64
-  let imageBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-
-  // Validasi Base64
-  if (!imageBase64 || imageBase64.length === 0) {
-    output.textContent = 'Gagal menangkap gambar. Mohon coba lagi.';
-    return;
-  }
-
-  // Mulai analisis
-  analyzeImage(imageBase64);
-};
-
-async function analyzeImage(imageBase64) {
+form.onsubmit = async (ev) => {
+  ev.preventDefault();
   output.textContent = 'Sedang menganalisis...';
 
   try {
+    let imageUrl = form.elements.namedItem('chosen-image').value;
+    let imageBase64 = await fetch(imageUrl)
+      .then(r => r.arrayBuffer())
+      .then(a => Base64.fromByteArray(new Uint8Array(a)));
+
+    // Prompt dalam Bahasa Indonesia
     const analisisPrompt = 
-      "Analisis hanya tingkat kekotoran sepatu dalam gambar ini. " +
-      "Berikan nilai tingkat kekotoran dari skala 1-10: jika 1, maka kotornya sedikit. jika 10, maka sangat kotor. " +
-      "Tolong jelaskan secara spesifik seperti: Upper berapa persen kotornya, Midsole berapa persen kotornya, Outsole berapa persen kotornya. " +
-      "Berdasarkan kondisi tersebut, rekomendasikan salah satu dari layanan berikut: **Standar Treatment** (IDR 50.000): Untuk kotoran ringan seperti debu atau lumpur. " +
-      "**Extra Treatment** (IDR 60.000-100.000): Untuk noda membandel, bahan khusus seperti suede atau kulit, atau masalah jamur dan bau. " +
-      "**Express Treatment** (IDR 65.000): Untuk pembersihan cepat, terbatas pada pembersihan standar. " +
-      "**Unyellowing Treatment** (IDR 75.000): Untuk mengembalikan warna putih pada sepatu yang menguning.";
+      "Analisis hanya tingkat kekotoan sepatu dalam gambar ini. " + 
+      "Berikan nilai tingkat kekotoran dari skala 1-10: jika 1, maka kotornya sedikit. jika 10, maka sangat kotor" +
+      "Tolong jelaskan secara spesifik seperti: Upper berapa persen kotornya, Midsole berapa persen kotornya, Outsole berapa persen kotornya" +
+      "Berdasarkan kondisi tersebut, rekomendasikan salah satu dari layanan berikut: **Standar Treatment** (IDR 50.000): Untuk kotoran ringan seperti debu atau lumpur. Fokus pada pembersihan bagian luar sepatu (upper, midsole, outsole). **Extra Treatment** (IDR 60.000-100.000): Untuk noda membandel, bahan khusus seperti suede atau kulit, atau masalah jamur dan bau. Sesuaikan harga berdasarkan tingkat kekotoran. *Express Treatment** (IDR 65.000): Untuk pembersihan cepat, terbatas pada pembersihan standar. **Unyellowing Treatment** (IDR 75.000): Untuk mengembalikan warna putih pada sepatu yang menguning. Menggunakan teknik seperti bleaching atau UV treatment." +
+      "Jika sepatu tidak cocok untuk salah satu layanan di atas, nyatakan alasannya. "+
+      "Fokus hanya pada rekomendasi layanan GianShoemaker, dan jangan menyebutkan hal di luar ruang lingkup layanan laundry sepatu ini.";
+      // "Beri nilai tingkat kekotoran dari skala 1-10 jika 1 maka kotornya sedikit jika 10 sangat kotor dan jelaskan secara spesifik seperti kotornya pada bagian upper berapa persen midsole berapa persen dan outsole berapa persen " +
+      // "di mana kotoran atau keausan terlihat. Fokus hanya pada aspek kebersihan."
+      // "tolong rekomendasikan treatment yang cocok untuk sepatunya apakah reguler treatment, express treatment, extra treatment";
 
     let contents = [
       {
         role: 'user',
         parts: [
-          { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } },
+          { inline_data: { mime_type: 'image/jpeg', data: imageBase64, } },
           { text: analisisPrompt }
         ]
       }
@@ -82,10 +62,8 @@ async function analyzeImage(imageBase64) {
       output.innerHTML = md.render(buffer.join(''));
     }
   } catch (e) {
-    output.innerHTML = `Terjadi kesalahan: ${e.message}`;
-    console.error(e);
+    output.innerHTML += '<hr>' + e;
   }
-}
+};
 
-// Inisialisasi kamera saat halaman dimuat
-initializeCamera();
+maybeShowApiKeyBanner(API_KEY);

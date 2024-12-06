@@ -28,12 +28,39 @@
       font-size: 2rem;
     }
 
-    video, canvas {
-      display: block;
+    .image-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .image-choice {
+      position: relative;
+      cursor: pointer;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .image-choice:hover {
+      transform: scale(1.02);
+    }
+
+    .image-choice input {
+      display: none;
+    }
+
+    .image-choice img {
       width: 100%;
-      max-width: 100%;
-      border-radius: 12px;
-      margin-bottom: 20px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 3px solid transparent;
+    }
+
+    .image-choice input:checked + img {
+      border-color: #2563eb;
     }
 
     button {
@@ -44,9 +71,9 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 1rem;
-      margin-top: 10px;
-      transition: background 0.2s;
       width: 100%;
+      margin-top: 20px;
+      transition: background 0.2s;
     }
 
     button:hover {
@@ -65,15 +92,38 @@
       main {
         padding: 20px;
       }
+      
+      .image-picker {
+        grid-template-columns: 1fr 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <main>
     <h1>Analisis Kebersihan Sepatu</h1>
-    <video autoplay playsinline></video>
-    <canvas></canvas>
-    <button id="capture">Ambil Gambar</button>
+    <form>
+      <div class="image-picker">
+        <label class="image-choice">
+          <input type="radio" checked name="chosen-image" value="/sepatu4.jpg">
+          <img src="/sepatu4.jpg" alt="Sepatu 1">
+        </label>
+        <!-- <label class="image-choice">
+          <input type="radio" name="chosen-image" value="/sepatu4.jpg">
+          <img src="/sepatu4.jpg" alt="Sepatu 4">
+        </label>
+        <label class="image-choice">
+          <input type="radio" name="chosen-image" value="/sepatu3.jpg">
+          <img src="/sepatu3.jpg" alt="Sepatu 3">
+        </label>
+        <label class="image-choice">
+          <input type="radio" name="chosen-image" value="/sepatu2.jpg">
+          <img src="/sepatu2.jpg" alt="Sepatu 2"> -->
+        </label>
+      </div>
+      
+      <button type="submit">Analisis Sepatu</button>
+    </form>
     <p class="output">(Hasil analisis akan muncul di sini)</p>
   </main>
   <script type="module" src="/main.js"></script>
